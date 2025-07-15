@@ -1,6 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.agendainterativa">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" /> 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
       android:name=".MainApplication"
@@ -9,7 +14,35 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
-      android:supportsRtl="true">
+      android:supportsRtl="true"
+      android:usesCleartextTraffic="true" > <service
+          android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationListenerService"
+          android:exported="false" >
+          <intent-filter>
+              <action android:name="com.google.firebase.MESSAGING_EVENT" />
+          </intent-filter>
+      </service>
+      <!--<service android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationActionsService" android:exported="false"/>-->
+
+      <receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationPublisher" />
+      <receiver android:name="com.dieam.reactnativepushnotification.modules.RNPushNotificationBootEventReceiver" android:exported="true">
+          <intent-filter>
+              <action android:name="android.intent.action.BOOT_COMPLETED" />
+              <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+              <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+          </intent-filter>
+      </receiver>
+
+      <meta-data android:name="com.dieam.reactnativepushnotification.notification_channel_name" android:value="SeuCanalDeNotificacao"/>
+      <meta-data android:name="com.dieam.reactnativepushnotification.notification_color" android:resource="@color/white"/>
+      <meta-data android:name="com.dieam.reactnativepushnotification.notification_channel_description" android:value="Descrição do seu canal"/>
+      <meta-data android:name="com.dieam.reactnativepushnotification.small_icon" android:resource="@mipmap/ic_launcher"/>
+      <meta-data android:name="com.dieam.reactnativepushnotification.large_icon" android:resource="@mipmap/ic_launcher"/>
+      <meta-data android:name="com.dieam.reactnativepushnotification.channel_create_timeout" android:value="20000" />
+      <meta-data
+          android:name="com.google.firebase.messaging.default_notification_channel_id"
+          android:value="fcm_default_channel" />
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

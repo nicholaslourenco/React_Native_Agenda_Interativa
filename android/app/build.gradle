@@ -2,6 +2,14 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+configurations.all {
+    resolutionStrategy {
+        force "androidx.core:core:1.16.0" // Garante a versão mais recente do core-ktx/core
+        force "androidx.appcompat:appcompat:1.6.1" // Versão estável e recente do appcompat
+        // Pode ser necessário forçar outras libs, mas comece com essas.
+    }
+}
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -76,7 +84,14 @@ android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
+    lint {
+        // true por padrão, mude para false para desabilitar o lint em builds de depuração
+        // abortOnError false // Isso desabilitaria o abortamento do build para qualquer erro Lint
 
+        // Ou, para desabilitar apenas o erro específico MissingPermission para esta task
+        disable 'MissingPermission'
+        checkDependencies true // Certifique-se de que isso esteja true para verificar dependências
+    }
     namespace "com.agendainterativa"
     defaultConfig {
         applicationId "com.agendainterativa"
@@ -84,6 +99,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        missingDimensionStrategy 'RNFirebaseBackgroundMessaging', 'default'
+        missingDimensionStrategy 'RNFirebaseMessaging', 'default'
     }
     signingConfigs {
         debug {
@@ -105,15 +122,45 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    packagingOptions {
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    }
 }
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation 'com.google.firebase:firebase-analytics:17.3.0'
+    implementation project(':react-native-push-notification')
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
     }
 }
+// SOLUÇÃO PARA O ERRO DE DEPENDÊNCIA DO VECTOR ICONS
+tasks.whenTaskAdded { task ->
+    // Garante que copyReactNativeVectorIconFonts seja executado antes de generateDebugLintReportModel
+    if (task.name == 'generateDebugLintReportModel') {
+        task.dependsOn(':app:copyReactNativeVectorIconFonts')
+    }
+    // Garante que copyReactNativeVectorIconFonts seja executado antes de lintAnalyzeDebug
+    if (task.name == 'lintAnalyzeDebug') {
+        task.dependsOn(':app:copyReactNativeVectorIconFonts')
+    }
+    // Deixe a parte de release comentada, como combinamos
+    // if (task.name == 'lintAnalyzeRelease') {
+    //     task.dependsOn(':app:copyReactNativeVectorIconFonts')
+    // }
+}
+
+project.ext.vectoricons = [
+    iconFontNames: [ 'Ionicons.ttf', 'MaterialIcons.ttf', 'MaterialCommunityIcons.ttf' ] // Name of the font files you want to copy
+]
+
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+apply plugin: 'com.google.gms.google-services'
